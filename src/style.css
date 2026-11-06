@@ -1,0 +1,177 @@
+:root {
+  color: #f4efe4;
+  background: #14202e;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#app {
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 16px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.04em;
+}
+
+.lede {
+  margin: 4px 0 0;
+  color: #c5d0dc;
+  line-height: 1.5;
+}
+
+#sheet {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.frame {
+  background: #f6f1e6;
+  color: #1d2430;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 58px;
+}
+
+.frame b {
+  display: block;
+  padding: 2px 0 1px;
+  text-align: center;
+  font-size: 0.68rem;
+  color: #6d5a45;
+  background: #eadcc6;
+}
+
+.marks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 22px;
+  border-bottom: 1px solid #e2d3bc;
+}
+
+.frame.tenth .marks { grid-template-columns: 1fr 1fr 1fr; }
+
+.marks span {
+  text-align: center;
+  font-weight: 700;
+  line-height: 22px;
+  border-left: 1px solid #e2d3bc;
+}
+
+.marks span:first-child { border-left: 0; }
+
+.running {
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+#status {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 1.05rem;
+}
+
+#lane {
+  width: 100%;
+  flex: 1;
+  min-height: 240px;
+  border-radius: 12px;
+  background: #101820;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 3.2em 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.meter.wait { opacity: 0.4; }
+
+.track {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: #1c2a3a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.sweet {
+  position: absolute;
+  left: 40%;
+  width: 20%;
+  top: 0;
+  bottom: 0;
+  background: #f0d7a2;
+}
+
+.needle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  background: #f4efe4;
+  box-shadow: 0 0 0 1px rgba(20, 32, 46, 0.35);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.buttons { display: flex; gap: 8px; }
+
+button {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  background: #e0b56d;
+  color: #1d2430;
+  cursor: pointer;
+}
+
+button.ghost { background: transparent; color: #f4efe4; border: 1px solid #6d7c8d; }
+
+button:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 640px) {
+  h1 { font-size: 1.45rem; }
+  .frame b, .running { font-size: 0.62rem; }
+}
