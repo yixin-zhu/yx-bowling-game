@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_PINS } from "./lane";
+import { ALL_PINS, LANE, pinSpots } from "./lane";
 import { Sim2D } from "./sim2d";
 
 function roll(sim: Sim2D, angle: number, power: number): void {
@@ -40,6 +40,32 @@ describe("二维球道", () => {
     expect(sim.settled()).toBe(true);
     expect(sim.guttered()).toBe(true);
     expect(sim.standingPinIds()).toEqual([...ALL_PINS]);
+  });
+
+  it("还站着的瓶子画在瓶位上，倒下的瓶子离开瓶位并标成躺倒", () => {
+    const sim = new Sim2D(quiet);
+    roll(sim, 0.02, 1);
+    const standing = new Set(sim.standingPinIds());
+    const spots = new Map(pinSpots().map((spot) => [spot.id, spot]));
+    const pins = sim.poses().filter((pose) => pose.kind === "pin");
+    expect(standing.size).toBeGreaterThan(0);
+    expect(pins).toHaveLength(ALL_PINS.length);
+    expect(pins.some((pose) => pose.down)).toBe(true);
+    for (const pose of pins) {
+      const spot = spots.get(pose.id);
+      expect(spot).toBeDefined();
+      if (!spot) continue;
+      if (standing.has(pose.id)) {
+        expect(pose.down).toBe(false);
+        expect(pose.x).toBeCloseTo(spot.x);
+        expect(pose.y).toBeCloseTo(spot.y);
+      } else {
+        expect(pose.down).toBe(true);
+        expect(Math.hypot(pose.x - spot.x, pose.y - spot.y)).toBeGreaterThan(LANE.pinRadius * 1.35);
+        expect(pose.homeX).toBeCloseTo(spot.x);
+        expect(pose.homeY).toBeCloseTo(spot.y);
+      }
+    }
   });
 
   it("同样的出手参数，晃动后结果不一样", () => {

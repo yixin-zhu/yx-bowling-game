@@ -11,6 +11,8 @@ const GUTTER = 0x0010;
 const TICK_MS = 8;
 /** 超过这个撞击速度，球会把瓶子拨开后直穿，不再把瓶子带进袋。单位是每步位移。 */
 const PLOW_SPEED = 5.6;
+/** 离开瓶位不超过这个距离，瓶子仍算站着。画面和计分用同一条线。 */
+const STAND_LIMIT = LANE.pinRadius * 1.35;
 
 export interface Sim2DOptions {
   /** 默认用 Math.random。测试可以传入固定种子。 */
@@ -120,24 +122,42 @@ export class Sim2D implements LaneSim {
         x: this.ball.position.x,
         y: this.ball.position.y,
         z: 0,
-        angle: this.ball.angle,
+        angle: 0,
       });
     }
     for (const [id, pin] of this.pins) {
-      poses.push({ id, kind: "pin", x: pin.position.x, y: pin.position.y, z: 0, angle: pin.angle });
+      const spot = this.spots.get(id);
+      if (!spot) continue;
+      const dx = pin.position.x - spot.x;
+      const dy = pin.position.y - spot.y;
+      const down = Math.hypot(dx, dy) > STAND_LIMIT;
+      poses.push(
+        down
+          ? {
+              id,
+              kind: "pin",
+              x: pin.position.x,
+              y: pin.position.y,
+              z: 0,
+              angle: Math.atan2(dy, dx),
+              down: true,
+              homeX: spot.x,
+              homeY: spot.y,
+            }
+          : { id, kind: "pin", x: spot.x, y: spot.y, z: 0, angle: 0, down: false },
+      );
     }
     return poses;
   }
 
   standingPinIds(): number[] {
-    const limit = LANE.pinRadius * 1.35;
     const standing: number[] = [];
     for (const [id, pin] of this.pins) {
       const spot = this.spots.get(id);
       if (!spot) continue;
       const dx = pin.position.x - spot.x;
       const dy = pin.position.y - spot.y;
-      if (Math.hypot(dx, dy) <= limit) standing.push(id);
+      if (Math.hypot(dx, dy) <= STAND_LIMIT) standing.push(id);
     }
     return standing.sort((a, b) => a - b);
   }

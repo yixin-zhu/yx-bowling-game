@@ -16,7 +16,13 @@ export interface Pose {
   y: number;
   /** 预留给三维。二维实现里始终是 0。 */
   z: number;
+  /** 倒下的瓶子：被撞开的方向，球道坐标里 0 朝右。球和还站着的瓶子是 0。 */
   angle: number;
+  /** 瓶子已经离开瓶位，计分算倒。画面上画成躺着。 */
+  down?: boolean;
+  /** 倒下的瓶子原来的瓶位，用来标出空出来的位置。 */
+  homeX?: number;
+  homeY?: number;
 }
 
 /**

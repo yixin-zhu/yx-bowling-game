@@ -4,9 +4,11 @@ import { ALL_PINS, LANE } from "./lane";
 import { applyKnock, freshRack, scoreSheet, type Rack } from "./scoring";
 import { Sim2D } from "./sim2d";
 
-type Phase = "aim" | "power" | "roll" | "over";
+type Phase = "aim" | "power" | "roll" | "reveal" | "over";
 
 const AIM_SWEEP = (12 * Math.PI) / 180;
+/** 球停之后，倒下的瓶子先留在球道上，让这一球的结果能看清。 */
+const REVEAL_MS = 1500;
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("找不到页面容器");
@@ -58,6 +60,8 @@ let powerPeriod = 1000;
 let powerOffset = 0;
 let lockedAngle = 0;
 let lockedPower: number | null = null;
+let revealClock = 0;
+let resultLine = "";
 
 sim.reset(ALL_PINS);
 beginAim();
@@ -100,6 +104,7 @@ function restart(): void {
   rolls = [];
   rack = freshRack();
   note = "";
+  resultLine = "";
   lockedPower = null;
   sim.reset(ALL_PINS);
   beginAim();
@@ -123,6 +128,9 @@ function frameLoop(now: number): void {
   if (phase === "roll") {
     sim.step(dt);
     if (sim.settled()) finishRoll();
+  } else if (phase === "reveal") {
+    revealClock += dt;
+    if (revealClock >= REVEAL_MS) advanceAfterReveal();
   }
   updateMeter();
   paint();
@@ -132,20 +140,30 @@ requestAnimationFrame(frameLoop);
 
 function finishRoll(): void {
   if (!rack) return;
-  const before = rack.standing.length;
+  const played = rack;
+  const before = played.standing.length;
   const still = sim.standingPinIds();
-  const knocked = before - still.filter((id) => rack?.standing.includes(id)).length;
+  const knocked = before - still.filter((id) => played.standing.includes(id)).length;
   const gutter = sim.guttered() && knocked === 0;
-  const next = applyKnock(rack, rolls, still);
+  const next = applyKnock(played, rolls, still);
   rolls = next.rolls;
   rack = next.rack;
-  if (!rack) phase = "over";
-  else {
-    sim.reset(rack.standing);
-    beginAim();
-  }
   note = call(knocked, before, gutter);
+  resultLine = `第 ${played.frame + 1} 格 · 第 ${played.ball + 1} 球 · ${note}`;
+  revealClock = 0;
+  phase = rack ? "reveal" : "over";
   renderSheet();
+  renderStatus();
+}
+
+function advanceAfterReveal(): void {
+  if (!rack) {
+    phase = "over";
+    renderStatus();
+    return;
+  }
+  sim.reset(rack.standing);
+  beginAim();
   renderStatus();
 }
 
@@ -169,8 +187,10 @@ function renderSheet(): void {
 
 function renderStatus(): void {
   const scored = scoreSheet(rolls);
-  if (phase === "over" || !rack) {
-    status.textContent = `一局结束，总分 ${scored.total}`;
+  if (phase === "reveal") {
+    status.textContent = resultLine;
+  } else if (phase === "over" || !rack) {
+    status.textContent = note ? `一局结束，总分 ${scored.total} · ${note}` : `一局结束，总分 ${scored.total}`;
   } else {
     const ball = rack.ball + 1;
     const extra = note ? ` · ${note}` : "";
@@ -183,7 +203,8 @@ function renderStatus(): void {
 function syncControls(): void {
   const ready = phase === "aim" || phase === "power";
   throwButton.disabled = !ready;
-  throwButton.textContent = phase === "power" ? "出球" : phase === "roll" ? "球还在滚" : "锁定方向";
+  throwButton.textContent =
+    phase === "power" ? "出球" : phase === "roll" ? "球还在滚" : phase === "reveal" ? "看结果" : "锁定方向";
   meter.classList.toggle("wait", lockedPower === null && phase !== "power");
 }
 

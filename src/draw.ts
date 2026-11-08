@@ -74,8 +74,18 @@ export function drawLane(
     ctx.fill();
   }
 
+  const pinRadius = LANE.pinRadius * scale;
   for (const pose of poses) {
-    if (pose.kind === "pin") drawPin(ctx, toX(pose.x), toY(pose.y), LANE.pinRadius * scale);
+    if (pose.kind !== "pin" || !pose.down || pose.homeX === undefined || pose.homeY === undefined) continue;
+    drawVacant(ctx, toX(pose.homeX), toY(pose.homeY), pinRadius);
+  }
+  for (const pose of poses) {
+    if (pose.kind !== "pin" || !pose.down) continue;
+    drawFallenPin(ctx, toX(pose.x), toY(pose.y), pinRadius, pose.angle);
+  }
+  for (const pose of poses) {
+    if (pose.kind !== "pin" || pose.down) continue;
+    drawPin(ctx, toX(pose.x), toY(pose.y), pinRadius);
   }
   for (const pose of poses) {
     if (pose.kind === "ball") drawBall(ctx, toX(pose.x), toY(pose.y), LANE.ballRadius * scale);
@@ -92,6 +102,51 @@ function drawPin(ctx: CanvasRenderingContext2D, x: number, y: number, radius: nu
   ctx.beginPath();
   ctx.arc(x, y, radius * 0.62, 0.2, Math.PI - 0.2);
   ctx.stroke();
+}
+
+/** 瓶子原来的位置空出来，表示这只已经不站在这里。 */
+function drawVacant(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number): void {
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(244, 239, 228, 0.55)";
+  ctx.lineWidth = Math.max(1.5, radius * 0.16);
+  ctx.setLineDash([3, 3]);
+  ctx.arc(x, y, radius * 0.9, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/** 沿被撞开的方向躺倒。angle 是球道坐标，画布的 y 轴相反。 */
+function drawFallenPin(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  laneAngle: number,
+): void {
+  const length = radius * 2.7;
+  const thick = radius * 0.62;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-laneAngle);
+  ctx.fillStyle = "#c5ced8";
+  ctx.beginPath();
+  ctx.moveTo(-length + thick, -thick);
+  ctx.lineTo(length - thick, -thick);
+  ctx.arc(length - thick, 0, thick, -Math.PI / 2, Math.PI / 2);
+  ctx.lineTo(-length + thick, thick);
+  ctx.arc(-length + thick, 0, thick, Math.PI / 2, -Math.PI / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#243140";
+  ctx.lineWidth = Math.max(1, radius * 0.12);
+  ctx.stroke();
+  ctx.strokeStyle = "#b23b3b";
+  ctx.lineWidth = Math.max(2, thick * 0.55);
+  ctx.beginPath();
+  ctx.moveTo(length * 0.18, -thick * 0.82);
+  ctx.lineTo(length * 0.18, thick * 0.82);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number): void {
